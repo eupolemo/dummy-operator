@@ -18,8 +18,14 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
+	"os"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,7 +37,8 @@ import (
 // DummyReconciler reconciles a Dummy object
 type DummyReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=dummy.interview.com,resources=dummies,verbs=get;list;watch;create;update;patch;delete
@@ -54,22 +61,117 @@ func (r *DummyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	logger := log.FromContext(ctx)
 
 	dummy := &dummyv1alpha1.Dummy{}
+	r.Get(ctx, req.NamespacedName, dummy)
 
-	logger.Info("name", dummy.Name)
-	logger.Info("namespace", dummy.Namespace)
-	logger.Info("message", dummy.Spec.Message)
+	logger.Info(dummy.Spec.Message)
+
+	//dummyDeployment := &appsv1.Deployment{}
 
 	dummy.Status.SpecEcho = dummy.Spec.Message
 
-	err := r.Get(ctx, req.NamespacedName, dummy)
-	if err = r.Status().Update(ctx, dummy); err != nil {
-		logger.Error(err, "Failed to update Dummy SpecEcho")
-		return ctrl.Result{}, err
-	}
+	//dummyDeployment.Spec.Selector.MatchLabels["specEcho"] = dummy.Spec.Message
+	//if err = r.Status().Update(ctx, dummyDeployment); err != nil {
+	//	logger.Error(err, "Failed to update Dummy SpecEcho")
+	//	return ctrl.Result{}, err
+	//}
 
 	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil
+}
+
+func (r *DummyReconciler) doFinalizerOperationsForDummy(cr *dummyv1alpha1.Dummy) {
+	r.Recorder.Event(cr, "Warning", "Deleting",
+		fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
+			cr.Name,
+			cr.Namespace))
+
+}
+
+func (r *DummyReconciler) deploymentForDummy(
+	dummy *dummyv1alpha1.Dummy) (*appsv1.Deployment, error) {
+	ls := labelsForDummy(dummy.Name)
+	replicas := int32(1)
+
+	image, err := imageForDummy()
+	if err != nil {
+		return nil, err
+	}
+
+	dep := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dummy.Name,
+			Namespace: dummy.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsNonRoot: &[]bool{true}[0],
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
+					Containers: []corev1.Container{{
+						Image:           image,
+						Name:            "dummy",
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						SecurityContext: &corev1.SecurityContext{
+							RunAsNonRoot:             &[]bool{true}[0],
+							RunAsUser:                &[]int64{1001}[0],
+							AllowPrivilegeEscalation: &[]bool{false}[0],
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{
+									"ALL",
+								},
+							},
+						},
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: 80,
+							Name:          "dummy",
+						}},
+						Command: []string{"nginx", "-g", "daemon off;"},
+					}},
+				},
+			},
+		},
+	}
+
+	if err := ctrl.SetControllerReference(dummy, dep, r.Scheme); err != nil {
+		return nil, err
+	}
+	return dep, nil
+}
+
+func labelsForDummy(name string) map[string]string {
+	var imageTag string
+	image, err := imageForDummy()
+	if err == nil {
+		imageTag = strings.Split(image, ":")[1]
+	}
+	return map[string]string{"app.kubernetes.io/name": "Dummy",
+		"app.kubernetes.io/instance":   name,
+		"app.kubernetes.io/version":    imageTag,
+		"app.kubernetes.io/part-of":    "dummy-operator",
+		"app.kubernetes.io/created-by": "controller-manager",
+	}
+}
+
+func imageForDummy() (string, error) {
+	var imageEnvVar = "DUMMY_IMAGE"
+	image, found := os.LookupEnv(imageEnvVar)
+	if !found {
+		return "nginx:stable-alpine", nil
+		//return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
+	}
+	return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
