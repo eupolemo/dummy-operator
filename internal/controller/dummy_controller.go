@@ -47,7 +47,13 @@ type DummyReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *DummyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+
+	dummy := &dummyv1alpha1.Dummy{}
+
+	log.Info("name", dummy.Name)
+	log.Info("namespace", dummy.Namespace)
+	log.Info("message", dummy.Spec.Message)
 
 	// TODO(user): your logic here
 
