@@ -29,7 +29,10 @@ type DummySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Dummy. Edit dummy_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	//Foo string `json:"foo,omitempty"`
+
+	// Message field
+	Message string `json:"message,omitempty"`
 }
 
 // DummyStatus defines the observed state of Dummy
