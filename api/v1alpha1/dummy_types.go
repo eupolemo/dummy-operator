@@ -41,7 +41,8 @@ type DummyStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// SpecEcho message field
-	SpecEcho string `json:"specEcho,omitempty"`
+	SpecEcho  string `json:"specEcho,omitempty"`
+	PodStatus string `json:"podStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true

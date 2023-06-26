@@ -42,6 +42,8 @@ spec:
           status:
             description: DummyStatus defines the observed state of Dummy
             properties:
+              podStatus:
+                type: string
               specEcho:
                 description: SpecEcho message field
                 type: string
