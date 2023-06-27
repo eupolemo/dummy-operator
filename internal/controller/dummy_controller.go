@@ -58,14 +58,9 @@ type DummyReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *DummyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-
 	dummy := &dummyv1alpha1.Dummy{}
 	err := r.Get(ctx, req.NamespacedName, dummy)
-
-	logger.Info(dummy.Spec.Message)
-
-	//dummyDeployment := &appsv1.Deployment{}
+	logger := log.FromContext(ctx, "Dummy.Spec", dummy.Spec)
 
 	if dummy.Spec.Message != dummy.Status.SpecEcho {
 		dummy.Status.SpecEcho = dummy.Spec.Message
