@@ -1,30 +1,38 @@
 # dummy
-// TODO(user): Add simple overview of use/purpose
+This is a Kubernetes controller 
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+This dummy controller with a custom resource called dummy with a POD associated.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Running on the cluster
-1. Install Instances of Custom Resources:
+1. Build and push your image to the location specified by `IMG`:
+
+```sh
+make docker-build docker-push IMG=docker.io/eupolemo/dummy:latest
+```
+
+**NOTE** You need permission to push the container. For purpose of run without 
+
+2. Deploy the controller to the cluster with the image specified by `IMG`:
+
+```sh
+make deploy IMG=docker.io/eupolemo/dummy:latest
+```
+
+3. Install Instances of Custom Resources:
 
 ```sh
 kubectl apply -f config/samples/
 ```
 
-2. Build and push your image to the location specified by `IMG`:
+### Delete Resources:
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/dummy:tag
-```
-
-3. Deploy the controller to the cluster with the image specified by `IMG`:
-
-```sh
-make deploy IMG=<some-registry>/dummy:tag
+kubectl delete -f config/samples/
 ```
 
 ### Uninstall CRDs
@@ -40,9 +48,6 @@ UnDeploy the controller from the cluster:
 ```sh
 make undeploy
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
@@ -64,6 +69,20 @@ make run
 ```
 
 **NOTE:** You can also run this in one step by running: `make install run`
+
+3. Install Instances of Custom Resources:
+
+```sh
+kubectl apply -f config/samples/dummy_v1alpha1_dummy.yaml
+```
+
+**NOTE:** The logs will show the status changing and the Dummy.Spec info
+
+4. Describe the Custom Resource will show the state of the resource:
+
+```sh
+kubectl describe dummies.dummy.interview.com dummy-sample
+```
 
 ### Modifying the API definitions
 If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
