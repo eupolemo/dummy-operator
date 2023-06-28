@@ -26,13 +26,13 @@ make deploy IMG=docker.io/eupolemo/dummy:latest
 3. Install Instances of Custom Resources:
 
 ```sh
-kubectl apply -f config/samples/
+kubectl apply -f config/samples/dummy_v1alpha1_dummy.yaml
 ```
 
 ### Delete Resources:
 
 ```sh
-kubectl delete -f config/samples/
+kubectl delete -f config/samples/dummy_v1alpha1_dummy.yaml
 ```
 
 ### Uninstall CRDs
