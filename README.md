@@ -15,7 +15,7 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 make docker-build docker-push IMG=docker.io/eupolemo/dummy:latest
 ```
 
-**NOTE** You need permission to push the container. For purpose of run without 
+**NOTE** You need permission to push the container. For purpose of run, isn't necessary build and push.
 
 2. Deploy the controller to the cluster with the image specified by `IMG`:
 
@@ -29,10 +29,22 @@ make deploy IMG=docker.io/eupolemo/dummy:latest
 kubectl apply -f config/samples/dummy_v1alpha1_dummy.yaml
 ```
 
-### Delete Resources:
+4. Showing dummy-controller-manater logs
 
 ```sh
-kubectl delete -f config/samples/dummy_v1alpha1_dummy.yaml
+kubectl logs deployments/dummy-controller-manager -n dummy-system -c manager --follow
+```
+
+5. Describe the Custom Resource will show the state of the resource:
+
+```sh
+kubectl describe dummies.dummy.interview.com dummy-sample
+```
+
+6. To Stop the execution:
+
+```sh
+kubectl make undeploy
 ```
 
 ### Uninstall CRDs
@@ -83,6 +95,8 @@ kubectl apply -f config/samples/dummy_v1alpha1_dummy.yaml
 ```sh
 kubectl describe dummies.dummy.interview.com dummy-sample
 ```
+
+
 
 ### Modifying the API definitions
 If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
